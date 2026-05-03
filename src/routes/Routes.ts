@@ -1,19 +1,25 @@
 import { Socket } from 'net';
-import { DNSController } from '@/modules/dns/controller/DNSController';
-import { DNSService } from '@/modules/dns/service/DNSService';
 import { Request } from '@/@types/contracts/Request';
+import { ServiceClientController } from '@/modules/client/controller/ServiceClientController';
+import { ServiceClientService } from '@/modules/client/service/ServiceClientService';
 import { ErrorHandler } from '@/infra/middleware/Error';
 
 export class Routes {
-    constructor(
-        private dnsService = new DNSService(),
-        private dnsController = new DNSController(this.dnsService)
-    ) {}
+    private serviceClientController: ServiceClientController;
+    private serviceClientService: ServiceClientService;
+
+    constructor() {
+        this.serviceClientService = new ServiceClientService();
+        this.serviceClientController = new ServiceClientController(this.serviceClientService);
+    }
 
     public handle(request:Request, socket:Socket) : void  {
 
-        if (request.method === 'GET' && request.path === 'resolve' && request.body.type === 'REQUEST') {
-            this.dnsController.getIp(request, socket);
+        if (request.method === 'POST' && request.path === 'redirect' && request.body.type === 'REQUEST') {
+            this.serviceClientController.redirect(request, socket);
+
+        } else if (request.method === 'POST' && request.path === 'retry' && request.body.type === 'REQUEST') {
+            this.serviceClientController.redirect(request, socket);
 
         } else {
             return ErrorHandler.handle("Rota não encontrada", socket);

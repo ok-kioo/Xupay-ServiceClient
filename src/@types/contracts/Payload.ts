@@ -1,3 +1,5 @@
 export type Payload = {
-  instanceName: string;
+  queueMessageId: string;
+  service: string;
+  apiPayload: string;
 };

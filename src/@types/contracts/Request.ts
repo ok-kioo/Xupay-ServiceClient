@@ -9,7 +9,8 @@ export type Request = {
 };
 
 enum Source {
-  LOAD_BALANCE = "LOAD_BALANCE"
+  LOAD_BALANCE = "LOAD_BALANCE",
+  MESSAGE_SERVICE = "MESSAGE_SERVICE"
 }
 
 enum Type {

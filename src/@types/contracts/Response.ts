@@ -1,7 +1,14 @@
-import { MessageBody } from "./MessageBody";
-
 export type Response = {
   method: string;
   path: string;
-  body: MessageBody;
+  body: {
+    source: string;
+    type: string;
+    payload: {
+      queueMessageId: string;
+      service: string;
+      apiPayload: string;
+    };
+    timestamp: string;
+  };
 };

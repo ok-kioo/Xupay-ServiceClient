@@ -2,85 +2,115 @@ import { Response } from "@/@types/contracts/Response";
 import { Request } from "@/@types/contracts/Request";
 
 export class ResponseParser {
-    public static deserialize(rawRequest: string): Request | void {
-        try {
-        const parts = rawRequest.split("|");
+  public static deserialize(rawRequest: string): Request {
+    try {
+      const request = rawRequest.trim();
 
-        if (parts.length !== 3) {
-            throw new Error(
-          "Requisição com campos diferentes do esperado " + rawRequest
-        );
-        }
+      const parts = request.split("|");
 
-        const [method, path, rawBody] = parts;
-
-        const bodyParts = rawBody.split(";");
-
-        if (bodyParts.length !== 4) {
-            throw new Error(
-                "Corpo da requisição com campos diferentes do esperado " + rawBody
-            );
-        }
-
-        const [source, type, rawPayload, timestamp] = bodyParts;
-
-        const payload = this.parsePayload(rawPayload);
-
-        const requiredPayloadFields = ["instanceName"];
-
-        for (const field of requiredPayloadFields) {
-            if (!payload[field]) {
-            throw new Error(
-                `Campo obrigatório ausente no payload: ${field}`
-            );
-            }
-        }
-
-        return {
-            method,
-            path,
-            body: {
-            source,
-            type,
-            payload: {
-                instanceName: payload.instanceName
-            },
-            timestamp:timestamp.trim(),
-            },
-        };
-        } catch (error: any) {
+      if (parts.length !== 3) {
         throw new Error(
-            `Formato inválido de corpo: ${error.message}`
+          "Requisição com campos diferentes do esperado " + request
         );
-        }
+      }
+
+      const [method, path, rawBody] = parts;
+
+      const bodyParts = rawBody.split(";").map((part) => part.trim());
+
+      if (bodyParts.length !== 4) {
+        throw new Error(
+          "Corpo da requisição com campos diferentes do esperado " + rawBody
+        );
+      }
+
+      const [source, type, rawPayload, timestamp] = bodyParts;
+
+      const payload = this.parsePayload(rawPayload);
+
+      return {
+        method,
+        path,
+        body: {
+          source,
+          type,
+          payload,
+          timestamp: timestamp.trim(),
+        },
+      };
+    } catch (error: any) {
+      throw new Error(`Formato inválido de corpo: ${error.message}`);
+    }
+  }
+
+  private static parsePayload(rawPayload: string): {
+    queueMessageId: string;
+    service: string;
+    apiPayload: string;
+  } {
+    if (!rawPayload || rawPayload.trim() === "") {
+      throw new Error("Payload vazio");
     }
 
-    public static serialize(response: Response): string {
-        return `${response.method}|${response.path}|${response.body.source};${response.body.type};${response.body.payload};${response.body.timestamp}`;
+    const payloadMarker = ",apiPayload=";
+    const markerIndex = rawPayload.indexOf(payloadMarker);
+
+    if (markerIndex === -1) {
+      throw new Error(
+        "Payload inválido. Esperado: queueMessageId=xxx,service=yyy,apiPayload=zzz"
+      );
     }
 
-    private static parsePayload(rawPayload: string): Record<string, string> {
-    const payload: Record<string, string> = {};
+    const metadataPart = rawPayload.slice(0, markerIndex);
+    const apiPayload = rawPayload.slice(markerIndex + payloadMarker.length);
 
-    const fields = rawPayload.split(",");
+    const metadata = this.parseMetadata(metadataPart);
+
+    if (!metadata.queueMessageId) {
+      throw new Error("Campo obrigatório ausente no payload: queueMessageId");
+    }
+
+    if (!metadata.service) {
+      throw new Error("Campo obrigatório ausente no payload: service");
+    }
+
+    if (!apiPayload.trim()) {
+      throw new Error("Campo obrigatório vazio no payload: apiPayload");
+    }
+
+    return {
+      queueMessageId: metadata.queueMessageId,
+      service: metadata.service,
+      apiPayload: apiPayload.trim(),
+    };
+  }
+
+  private static parseMetadata(rawMetadata: string): Record<string, string> {
+    const result: Record<string, string> = {};
+
+    const fields = rawMetadata.split(",");
 
     for (const field of fields) {
       const separatorIndex = field.indexOf("=");
 
       if (separatorIndex === -1) {
-        throw new Error(`Campo de payload sem "=": ${field}`);
+        throw new Error(`Campo de metadata sem "=": ${field}`);
       }
 
       const key = field.slice(0, separatorIndex).trim();
       const value = field.slice(separatorIndex + 1).trim();
 
       if (!key || !value) {
-        throw new Error(`Campo de payload inválido: ${field}`);
+        throw new Error(`Campo de metadata inválido: ${field}`);
       }
 
-      payload[key] = value;
+      result[key] = value;
     }
 
-    return payload;
+    return result;
+  }
+
+  public static serialize(response: Response): string {
+    return `${response.method}|${response.path}|${response.body.source};${response.body.type};${response.body.payload};${response.body.timestamp}`;
   }
 }
