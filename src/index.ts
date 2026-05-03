@@ -28,6 +28,6 @@ const server = net.createServer((socket: net.Socket) => {
     });
 });
 
-server.listen(4500, () => {
-    console.log('Servidor de processamento rodando na porta 4500');
+server.listen(6000, () => {
+    console.log('Servidor de processamento rodando na porta 6000');
 });
