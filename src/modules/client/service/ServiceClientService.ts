@@ -22,6 +22,6 @@ export class ServiceClientService {
             parseInt(process.env.MESSAGER_SERVICE_PORT || " ")
         );
 
-        serviceClient.send(queueMessageId, service, apiPayload, 'retry');
+        serviceClient.send(queueMessageId, '', '', 'retry');
     }
 }

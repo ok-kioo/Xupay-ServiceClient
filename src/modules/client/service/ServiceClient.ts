@@ -19,8 +19,14 @@ export class ServiceClient {
     }
 
   private buildSendRequest(queueMessageId: string, service: string, apiPayload: string, path: string): string {
-    const payload = `queueMessageId=${queueMessageId},service=${service},apiPayload=${apiPayload}`;
+    let payload: string = '';
 
-    return `POST|${path}|MESSAGE_SERVICE;REQUEST;${payload};${new Date().toISOString()}`;
+    if (path === 'redirect') {
+        payload = `queueMessageId=${queueMessageId},service=${service},apiPayload=${apiPayload}`;
+    } else if (path === 'retry') {
+        payload = `id=${queueMessageId}`;
+    }
+
+    return `POST|${path}|SERVICE_CLIENT;REQUEST;${payload};${new Date().toISOString()}`;
   }
 }
