@@ -1,6 +1,5 @@
 import { ServiceClient } from "./client/ServiceClient";
 import { SocketClient } from "@/infra/client/SocketClient";
-import { MessageBody } from "@/@types/contracts/MessageBody";
 import { ErrorHandler } from "@/infra/middleware/Error";
 import { ResponseParser } from "@/infra/parser/ResponseParser";
 
@@ -10,23 +9,23 @@ export class ServiceClientService {
     constructor() {
         this.socketClient = new SocketClient();
     }
-    public async redirectToService(messageBody: MessageBody, socket: any): Promise<void> {
+    public async redirectToService(queueMessageId:string, event:string, apiPayload:string, socket: any): Promise<void> {
         const serviceClient = new ServiceClient(this.socketClient, 
             process.env.SERVICE_HOST || " ", 
             parseInt(process.env.SERVICE_PORT || " ")
         );
 
         try{
-            serviceClient.send(messageBody.payload.queueMessageId, messageBody.payload.event, messageBody.payload.apiPayload, 'redirect');
+            serviceClient.send(queueMessageId, event, apiPayload, 'redirect');
         } catch (error) {
-            this.retryRequest(messageBody, socket);
+            this.retryRequest(queueMessageId, socket);
         }
 
         const responseBody = {
             payload:{
-                queueMessageId: messageBody.payload.queueMessageId,
-                event: messageBody.payload.event,
-                apiPayload: messageBody.payload.apiPayload
+                queueMessageId: queueMessageId,
+                event: event,
+                apiPayload: apiPayload
             },
             timestamp: new Date().toISOString(),
         };
@@ -37,7 +36,7 @@ export class ServiceClientService {
         socket.end();
     }
 
-    public async retryRequest(messageBody: MessageBody, socket: any): Promise<void> {
+    public async retryRequest(queueMessageId: string, socket: any): Promise<void> {
 
         const serviceClient = new ServiceClient(this.socketClient, 
             process.env.MESSAGE_SERVICE_HOST || " ", 
@@ -45,7 +44,7 @@ export class ServiceClientService {
         );
 
         try{
-            serviceClient.send(messageBody.payload.queueMessageId, '', '', 'retry');
+            serviceClient.send(queueMessageId, '', '', 'retry');
 
             const response = ResponseParser.serializeResponse(500, { message: "Falha ao processar requisição. Tentativa de retry realizada." });
             socket.write(response);

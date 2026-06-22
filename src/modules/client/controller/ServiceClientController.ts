@@ -17,7 +17,10 @@ export class ServiceClientController {
         const messageBody = request.body;
 
         this.serviceClientService.redirectToService(
-            messageBody, socket
+            messageBody.payload.queueMessageId,
+            messageBody.payload.event,
+            messageBody.payload.apiPayload,
+            socket
         );
     }
 
@@ -31,7 +34,8 @@ export class ServiceClientController {
         const messageBody = request.body;
 
         this.serviceClientService.retryRequest(
-            messageBody, socket
+            messageBody.payload.queueMessageId,
+            socket
         );
     }
 }
