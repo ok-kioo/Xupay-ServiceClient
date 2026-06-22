@@ -14,12 +14,12 @@ export class ServiceClientController {
             return;
         }
 
-        const messageBody = request.body;
+        const {queueMessageId, event, apiPayload} = request.body.payload;
 
         this.serviceClientService.redirectToService(
-            messageBody.payload.queueMessageId,
-            messageBody.payload.event,
-            messageBody.payload.apiPayload,
+            queueMessageId,
+            event,
+            apiPayload,
             socket
         );
     }
@@ -31,10 +31,10 @@ export class ServiceClientController {
             return;
         }
 
-        const messageBody = request.body;
+        const {queueMessageId} = request.body.payload;
 
         this.serviceClientService.retryRequest(
-            messageBody.payload.queueMessageId,
+            queueMessageId,
             socket
         );
     }
