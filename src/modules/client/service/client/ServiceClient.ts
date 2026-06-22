@@ -8,8 +8,8 @@ export class ServiceClient {
     private readonly servicePort: number
   ) {}
 
-  public async send(queueMessageId: string, service: string, apiPayload: string, path:string): Promise<void> {
-    const request = this.buildSendRequest(queueMessageId, service, apiPayload, path);
+  public async send(queueMessageId: string, event: string, apiPayload: string, path:string): Promise<void> {
+    const request = this.buildSendRequest(queueMessageId, event, apiPayload, path);
 
     await this.socketClient.send(
       this.serviceHost,
@@ -19,7 +19,7 @@ export class ServiceClient {
 
     }
 
-  private buildSendRequest(queueMessageId: string, service: string, apiPayload: string, path: string): string {
+  private buildSendRequest(queueMessageId: string, event: string, apiPayload: string, path: string): string {
       if (path === 'redirect') {
         return ResponseParser.serialize({
           method: "POST",
@@ -28,7 +28,7 @@ export class ServiceClient {
           secret: process.env.XUPAY_SERVICE_SECRET,
           body: {
             queueMessageId,
-            service,
+            event,
             apiPayload,
             timestamp: new Date().toISOString(),
           },

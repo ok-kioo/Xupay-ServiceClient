@@ -1,5 +1,5 @@
 export type Payload = {
   queueMessageId: string;
-  service: string;
+  event: string;
   apiPayload: string;
 };

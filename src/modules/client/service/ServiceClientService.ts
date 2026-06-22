@@ -17,7 +17,7 @@ export class ServiceClientService {
         );
 
         try{
-            serviceClient.send(messageBody.payload.queueMessageId, messageBody.payload.service, messageBody.payload.apiPayload, 'redirect');
+            serviceClient.send(messageBody.payload.queueMessageId, messageBody.payload.event, messageBody.payload.apiPayload, 'redirect');
         } catch (error) {
             this.retryRequest(messageBody, socket);
         }
@@ -25,7 +25,7 @@ export class ServiceClientService {
         const responseBody = {
             payload:{
                 queueMessageId: messageBody.payload.queueMessageId,
-                service: messageBody.payload.service,
+                event: messageBody.payload.event,
                 apiPayload: messageBody.payload.apiPayload
             },
             timestamp: new Date().toISOString(),

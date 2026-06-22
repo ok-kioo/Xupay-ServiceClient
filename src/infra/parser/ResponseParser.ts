@@ -117,7 +117,7 @@ export class ResponseParser {
 
     return {
       queueMessageId: payload.queueMessageId,
-      service: payload.service,
+      event: payload.service,
       apiPayload: payload.apiPayload,
     };
   }
