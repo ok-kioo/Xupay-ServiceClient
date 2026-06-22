@@ -15,11 +15,11 @@ export class Routes {
 
     public handle(request:Request, socket:Socket) : void  {
 
-        if (request.method === 'POST' && request.path === 'redirect' && request.body.type === 'REQUEST') {
+        if (request.method === 'POST' && request.path === 'redirect') {
             this.serviceClientController.redirect(request, socket);
 
-        } else if (request.method === 'POST' && request.path === 'retry' && request.body.type === 'REQUEST') {
-            this.serviceClientController.redirect(request, socket);
+        } else if (request.method === 'POST' && request.path === 'retry') {
+            this.serviceClientController.retry(request, socket);
 
         } else {
             return ErrorHandler.handle("Rota não encontrada", socket);

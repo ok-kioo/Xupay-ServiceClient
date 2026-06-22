@@ -16,6 +16,8 @@ const server = net.createServer((socket: net.Socket) => {
                 throw new Error("Requisição mal formatada " + data.toString());
             }
 
+            console.log(request);
+
             routes.handle(request, socket);
             
         } catch (error) {

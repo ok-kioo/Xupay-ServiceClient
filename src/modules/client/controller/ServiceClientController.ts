@@ -1,5 +1,4 @@
-import { isValidBodyRequest } from "@/@types/contracts/Request";
-import { ErrorHandler } from "@/infra/middleware/Error";
+import { isValidRequest } from "@/@types/contracts/Request";
 import { Request } from "@/@types/contracts/Request";
 import { ServiceClientService } from "../service/ServiceClientService";
 
@@ -9,29 +8,30 @@ export class ServiceClientController {
     ) {}
 
     public redirect(request: Request, socket: any): void {
-        const messageBody = isValidBodyRequest(request.body, socket);
+        const validRequest = isValidRequest(request, socket);
 
-        if (!messageBody) {
-            return ErrorHandler.handle("Corpo da requisição inválido", socket);
+        if (!validRequest) {
+            return;
         }
 
+        const messageBody = request.body;
+
         this.serviceClientService.redirectToService(
-            messageBody.payload.queueMessageId,
-            messageBody.payload.service,
-            messageBody.payload.apiPayload
+            messageBody, socket
         );
     }
 
     public retry(request: Request, socket: any): void {
-        const messageBody = isValidBodyRequest(request.body, socket);
+        const validRequest = isValidRequest(request, socket);
 
-        if (!messageBody) {
-            return ErrorHandler.handle("Corpo da requisição inválido", socket);
+        if (!validRequest) {
+            return;
         }
+
+        const messageBody = request.body;
+
         this.serviceClientService.retryRequest(
-            messageBody.payload.queueMessageId,
-            messageBody.payload.service,
-            messageBody.payload.apiPayload
+            messageBody, socket
         );
     }
 }
