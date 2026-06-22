@@ -48,9 +48,6 @@ export class ServiceClient {
         });
       }
 
-    else{
-      throw new Error(`Path inválida: ${path}. Esperado 'redirect' ou 'retry'.`);
-    }
-    
+      return '';
   }
 }
