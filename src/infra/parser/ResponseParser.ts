@@ -3,10 +3,15 @@ import {
   normalizePath,
 } from "@/@types/contracts/Request";
 import type { Request, RequestHeaders } from "@/@types/contracts/Request";
-import type { JsonValue } from "@/@types/contracts/MessagePayload";
-import type { Payload } from "@/@types/contracts/Payload";
+import type { JsonValue } from "@/@types/contracts/JsonValue";
 import { JsonCodec } from "./JsonCodec";
 import type { JsonObject } from "./JsonCodec";
+import { LoadBalancerPayload } from "@/@types/contracts/payload/LoadBalancerPayload";
+import { MessagePayload } from "@/@types/contracts/payload/MessagePayload";
+
+type ParsedPayload = 
+  | MessagePayload
+  | LoadBalancerPayload
 
 type SerializableRequest = {
   method: string;
@@ -84,42 +89,73 @@ export class ResponseParser {
     const [method, rawPath] = requestLine.split(" ");
     const headers = this.parseHeaders(headerLines);
     const parsedBody = this.parseJsonObject(rawBody);
+    const path = normalizePath(rawPath);
+    const body = this.parseMessageBody(path, parsedBody);
 
     return {
       method: method.toUpperCase(),
       path: normalizePath(rawPath),
       headers,
-      body: {
-        payload: this.parsePayload(parsedBody),
-        timestamp: this.optionalString(parsedBody.timestamp) ?? "",
-      },
+      body,
       rawBody,
     };
   }
 
-  private static parsePayload(body: JsonObject): Payload {
+  private static parseMessageBody(
+    path: string,
+    body: JsonObject
+  ): Request["body"] {
+    return {
+      payload: this.parsePayloadByPath(path, body)
+    };
+  }
+
+  private static parsePayloadByPath(
+    path: string,
+    body: JsonObject
+  ): ParsedPayload {
     const payload = this.extractPayloadObject(body);
 
-    if (
-      typeof payload.queueMessageId !== "string" ||
-      !payload.queueMessageId.trim()
-    ) {
-      throw new Error("Payload inválido. Campo queueMessageId ausente.");
+    if (path === "retry") {
+      return this.parseLoadBalancerPayload(payload);
     }
 
-    if (typeof payload.service !== "string" || !payload.service.trim()) {
-      throw new Error("Payload inválido. Campo service ausente.");
+    if (path === "redirect") {
+      return this.parseMessagePayload(payload);
     }
 
-    if (typeof payload.apiPayload !== "string") {
-      throw new Error("Payload inválido. Campo apiPayload ausente.");
-    }
+    return this.parseMessagePayload(payload);
+  }
 
+  private static parseMessagePayload(
+    payload: JsonObject
+  ): MessagePayload {
     return {
-      queueMessageId: payload.queueMessageId,
-      event: payload.service,
-      apiPayload: payload.apiPayload,
+      kind: "MESSAGE_PAYLOAD",
+      queueMessageId: this.requiredString(payload.queueMessageId, "queueMessageId"),
+      event: this.requiredString(payload.event, "event"),
+      apiPayload: this.requiredString(payload.apiPayload, "apiPayload"),
     };
+  }
+
+  private static parseLoadBalancerPayload(
+    payload: JsonObject
+  ): LoadBalancerPayload {
+    return {
+      kind: "LOAD_BALANCER_PAYLOAD",
+      queueMessageId: this.requiredString(payload.queueMessageId, "queueMessageId"),
+    };
+  }
+
+  private static requiredString(
+    value: JsonValue | undefined,
+    fieldName: string
+  ): string {
+    if (typeof value !== "string" || !value.trim()) {
+      throw new Error(`Payload inválido. Campo ${fieldName} ausente.`);
+    }
+
+    return value.trim();
   }
 
   private static extractPayloadObject(body: JsonObject): JsonObject {
@@ -155,10 +191,6 @@ export class ResponseParser {
 
   private static parseJsonObject(rawBody: string): JsonObject {
     return JsonCodec.parseObject(rawBody);
-  }
-
-  private static optionalString(value: JsonValue | undefined): string | undefined {
-    return typeof value === "string" ? value : undefined;
   }
 
   private static normalizeHeaders(headers: RequestHeaders): RequestHeaders {

@@ -1,6 +1,8 @@
 import { isValidRequest } from "@/@types/contracts/Request";
 import { Request } from "@/@types/contracts/Request";
 import { ServiceClientService } from "../service/ServiceClientService";
+import { MessagePayload } from "@/@types/contracts/payload/MessagePayload";
+import { LoadBalancerPayload } from "@/@types/contracts/payload/LoadBalancerPayload";
 
 export class ServiceClientController {
     constructor(
@@ -14,7 +16,9 @@ export class ServiceClientController {
             return;
         }
 
-        const {queueMessageId, event, apiPayload} = request.body.payload;
+        const payload = request.body.payload;
+
+        const {queueMessageId, event, apiPayload} = payload as MessagePayload;
 
         this.serviceClientService.redirectToService(
             queueMessageId,
@@ -31,7 +35,9 @@ export class ServiceClientController {
             return;
         }
 
-        const {queueMessageId} = request.body.payload;
+        const payload = request.body.payload;
+
+        const {queueMessageId} = payload as LoadBalancerPayload;
 
         this.serviceClientService.retryRequest(
             queueMessageId,

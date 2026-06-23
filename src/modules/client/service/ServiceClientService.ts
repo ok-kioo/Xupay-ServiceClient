@@ -16,21 +16,18 @@ export class ServiceClientService {
         );
 
         try{
-            serviceClient.send(queueMessageId, event, apiPayload, 'redirect');
+            serviceClient.send(queueMessageId, event, apiPayload);
         } catch (error) {
             this.retryRequest(queueMessageId, socket);
         }
 
         const responseBody = {
-            payload:{
-                queueMessageId: queueMessageId,
-                event: event,
-                apiPayload: apiPayload
-            },
-            timestamp: new Date().toISOString(),
+            queueMessageId: queueMessageId,
+            event: event,
+            apiPayload: apiPayload
         };
 
-        const response = ResponseParser.serializeResponse(201, responseBody);
+        const response = ResponseParser.serializeResponse(200, responseBody);
 
         socket.write(response);
         socket.end();
@@ -44,7 +41,7 @@ export class ServiceClientService {
         );
 
         try{
-            serviceClient.send(queueMessageId, '', '', 'retry');
+            serviceClient.retry(queueMessageId);
 
             const response = ResponseParser.serializeResponse(500, { message: "Falha ao processar requisição. Tentativa de retry realizada." });
             socket.write(response);

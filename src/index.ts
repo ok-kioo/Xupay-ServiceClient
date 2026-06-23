@@ -21,6 +21,7 @@ const server = net.createServer((socket: net.Socket) => {
             routes.handle(request, socket);
             
         } catch (error) {
+            console.log("Erro ao processar requisição: ", error);
             return ErrorHandler.handle("Erro ao processar requisição", socket);
         }
     });

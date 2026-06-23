@@ -8,8 +8,8 @@ export class ServiceClient {
     private readonly servicePort: number
   ) {}
 
-  public async send(queueMessageId: string, event: string, apiPayload: string, path:string): Promise<void> {
-    const request = this.buildSendRequest(queueMessageId, event, apiPayload, path);
+  public async send(queueMessageId: string, event: string, apiPayload: string): Promise<void> {
+    const request = this.buildSendRequest(queueMessageId, event, apiPayload);
 
     await this.socketClient.send(
       this.serviceHost,
@@ -17,10 +17,19 @@ export class ServiceClient {
       request
     );
 
-    }
+  }
 
-  private buildSendRequest(queueMessageId: string, event: string, apiPayload: string, path: string): string {
-      if (path === 'redirect') {
+  public async retry(queueMessageId: string): Promise<void> {
+    const request = this.buildRetryRequest(queueMessageId);
+
+    await this.socketClient.send(
+      this.serviceHost,
+      this.servicePort,
+      request
+    );
+  }
+
+  private buildSendRequest(queueMessageId: string, event: string, apiPayload: string): string {
         return ResponseParser.serialize({
           method: "POST",
           path: "redirect",
@@ -35,19 +44,15 @@ export class ServiceClient {
         });
     } 
 
-    else if (path === 'retry') {
+    private buildRetryRequest(queueMessageId: string): string {
         return ResponseParser.serialize({
           method: "POST",
           path: "retry",
           service: process.env.XUPAY_SERVICE_NAME || "xupay-service-client",
           secret: process.env.XUPAY_SERVICE_SECRET,
           body: {
-            queueMessageId,
-            timestamp: new Date().toISOString(),
+            queueMessageId
           },
         });
-      }
-
-      return '';
+      } 
   }
-}
