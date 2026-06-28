@@ -6,12 +6,12 @@ import type { Request, RequestHeaders } from "@/@types/contracts/Request";
 import type { JsonValue } from "@/@types/contracts/JsonValue";
 import { JsonCodec } from "./JsonCodec";
 import type { JsonObject } from "./JsonCodec";
-import { LoadBalancerPayload } from "@/@types/contracts/payload/LoadBalancerPayload";
-import { MessagePayload } from "@/@types/contracts/payload/MessagePayload";
+import { ServicePayload } from "@/@types/contracts/payload/ServicePayload";
+import { GatewayPayload } from "@/@types/contracts/payload/GatewayPayload";
 
 type ParsedPayload = 
-  | MessagePayload
-  | LoadBalancerPayload
+  | GatewayPayload
+  | ServicePayload
 
 type SerializableRequest = {
   method: string;
@@ -116,34 +116,31 @@ export class ResponseParser {
   ): ParsedPayload {
     const payload = this.extractPayloadObject(body);
 
-    if (path === "retry") {
-      return this.parseLoadBalancerPayload(payload);
-    }
-
     if (path === "redirect") {
-      return this.parseMessagePayload(payload);
+      return this.parseGatewayPayload(payload);
     }
 
-    return this.parseMessagePayload(payload);
+    if (path === "api/redirect") {
+      return this.parseServicePayload(body);
+    }
+
+    return this.parseGatewayPayload(payload);
   }
 
-  private static parseMessagePayload(
+  private static parseGatewayPayload(
     payload: JsonObject
-  ): MessagePayload {
+  ): GatewayPayload {
     return {
-      kind: "MESSAGE_PAYLOAD",
-      queueMessageId: this.requiredString(payload.queueMessageId, "queueMessageId"),
+      kind: "GATEWAY_PAYLOAD",
       event: this.requiredString(payload.event, "event"),
       apiPayload: this.requiredString(payload.apiPayload, "apiPayload"),
     };
   }
 
-  private static parseLoadBalancerPayload(
-    payload: JsonObject
-  ): LoadBalancerPayload {
+  private static parseServicePayload(body: JsonObject): ServicePayload {
     return {
-      kind: "LOAD_BALANCER_PAYLOAD",
-      queueMessageId: this.requiredString(payload.queueMessageId, "queueMessageId"),
+      kind: "SERVICE_PAYLOAD",
+      servicePayload: body.servicePayload,
     };
   }
 

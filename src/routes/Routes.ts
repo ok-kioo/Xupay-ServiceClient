@@ -18,9 +18,6 @@ export class Routes {
         if (request.method === 'POST' && request.path === 'redirect') {
             this.serviceClientController.redirect(request, socket);
 
-        } else if (request.method === 'POST' && request.path === 'retry') {
-            this.serviceClientController.retry(request, socket);
-
         } else {
             return ErrorHandler.handle("Rota não encontrada", socket);
         }

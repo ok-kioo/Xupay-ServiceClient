@@ -1,7 +1,7 @@
-import { MessagePayload } from "./payload/MessagePayload";
-import { LoadBalancerPayload } from "./payload/LoadBalancerPayload";
+import { GatewayPayload } from "./payload/GatewayPayload";
+import { LoadBalancerPayload } from "./payload/ServicePayload";
 
-export type Payload = MessagePayload | LoadBalancerPayload;
+export type Payload = GatewayPayload | LoadBalancerPayload;
 
 export type MessageBody = {
     payload: Payload;

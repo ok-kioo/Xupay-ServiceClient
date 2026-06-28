@@ -1,3 +1,4 @@
+import { ServiceResponse } from "@/@types/clients/ServiceResponse";
 import { SocketClient } from "@/infra/client/SocketClient";
 import { ResponseParser } from "@/infra/parser/ResponseParser";
 
@@ -8,51 +9,43 @@ export class ServiceClient {
     private readonly servicePort: number
   ) {}
 
-  public async send(queueMessageId: string, event: string, apiPayload: string): Promise<void> {
-    const request = this.buildSendRequest(queueMessageId, event, apiPayload);
+  public async send(event: string, apiPayload: string): Promise<ServiceResponse> {
+    const request = this.buildSendRequest(event, apiPayload);
 
-    await this.socketClient.send(
+    const rawResponse = await this.socketClient.send(
       this.serviceHost,
       this.servicePort,
       request
     );
 
+    const parsed = ResponseParser.deserialize(rawResponse);
+
+    if (!parsed) {
+      throw new Error("Resposta inválida do serviço alvo");
+    }
+
+    const payload = parsed.body.payload;
+
+    if (payload.kind !== "SERVICE_PAYLOAD") {
+      throw new Error("Payload inválido retornado pelo serviço alvo");
+    }
+
+    return {
+      servicePayload: payload.servicePayload
+    };
+
   }
 
-  public async retry(queueMessageId: string): Promise<void> {
-    const request = this.buildRetryRequest(queueMessageId);
-
-    await this.socketClient.send(
-      this.serviceHost,
-      this.servicePort,
-      request
-    );
-  }
-
-  private buildSendRequest(queueMessageId: string, event: string, apiPayload: string): string {
+  private buildSendRequest(event: string, apiPayload: string): string {
         return ResponseParser.serialize({
           method: "POST",
           path: "redirect",
           service: process.env.XUPAY_SERVICE_NAME || "xupay-service-client",
           secret: process.env.XUPAY_SERVICE_SECRET,
           body: {
-            queueMessageId,
             event,
-            apiPayload,
-            timestamp: new Date().toISOString(),
+            apiPayload
           },
         });
     } 
-
-    private buildRetryRequest(queueMessageId: string): string {
-        return ResponseParser.serialize({
-          method: "POST",
-          path: "retry",
-          service: process.env.XUPAY_SERVICE_NAME || "xupay-service-client",
-          secret: process.env.XUPAY_SERVICE_SECRET,
-          body: {
-            queueMessageId
-          },
-        });
-      } 
   }
