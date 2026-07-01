@@ -39,7 +39,7 @@ export class ServiceClient {
   private buildSendRequest(event: string, apiPayload: string): string {
         return ResponseParser.serialize({
           method: "POST",
-          path: "redirect",
+          path: "api/redirect",
           service: process.env.XUPAY_SERVICE_NAME || "xupay-service-client",
           secret: process.env.XUPAY_SERVICE_SECRET,
           body: {
