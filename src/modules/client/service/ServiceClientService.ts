@@ -24,6 +24,8 @@ export class ServiceClientService {
     public async redirect(event:string, apiPayload:JsonValue, socket: any): Promise<void> {
         if(event in AssyncEvent) {
             this.redirectToMessage(event, apiPayload, socket);
+        } else {
+            this.redirectToService(event, apiPayload, socket);
         }
     }
     
